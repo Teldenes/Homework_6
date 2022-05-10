@@ -30,14 +30,76 @@ class AnimatedSprite : public sf::Sprite
       bound_left = left;
      }
 
+    bool Collision_T(sf::Sprite wall)
+     {
+      sf::FloatRect guy_bounds = getGlobalBounds();
+      sf::FloatRect wall_bounds = wall.getGlobalBounds();
 
-    void animation(sf::Time &elapsed)
+      if ((guy_bounds.top+guy_bounds.height >= wall_bounds.top-3) && (guy_bounds.top < wall_bounds.top)
+      && (guy_bounds.left+guy_bounds.width > wall_bounds.left+3) && (guy_bounds.left < wall_bounds.left+wall_bounds.width-3))
+       {
+        return 1;
+       }
+      else{return 0;}
+     }
+
+    bool Collision_R(sf::Sprite wall)
+     {
+      sf::FloatRect guy_bounds = getGlobalBounds();
+      sf::FloatRect wall_bounds = wall.getGlobalBounds();
+
+      if ((guy_bounds.left <= wall_bounds.left+wall_bounds.width+3) && (guy_bounds.left+guy_bounds.width > wall_bounds.left+wall_bounds.width)
+       && (guy_bounds.top+guy_bounds.height > wall_bounds.top+3) && (guy_bounds.top < wall_bounds.top+wall_bounds.height-3))
+       {
+        return 1;
+       }
+      else{return 0;}
+     }
+
+    bool Collision_B(sf::Sprite wall)
+     {
+      sf::FloatRect guy_bounds = getGlobalBounds();
+      sf::FloatRect wall_bounds = wall.getGlobalBounds();
+
+      if ((guy_bounds.top <= wall_bounds.top + wall_bounds.height+3) && (guy_bounds.top+guy_bounds.height > wall_bounds.top+wall_bounds.height)
+       && (guy_bounds.left+guy_bounds.width > wall_bounds.left+3) && (guy_bounds.left < wall_bounds.left+wall_bounds.width-3))
+       {
+        return 1;
+       }
+      else{return 0;}
+     }
+
+    bool Collision_L(sf::Sprite wall)
+     {
+      sf::FloatRect guy_bounds = getGlobalBounds();
+      sf::FloatRect wall_bounds = wall.getGlobalBounds();
+
+      if ((guy_bounds.left+guy_bounds.width >= wall_bounds.left-3) && (guy_bounds.left < wall_bounds.left)
+       && (guy_bounds.top+guy_bounds.height > wall_bounds.top+3) && (guy_bounds.top < wall_bounds.top+wall_bounds.height-3))
+       {
+        return 1;
+       }
+      else{return 0;}
+     }
+
+
+
+    void animation(sf::Time &elapsed, const std::vector<sf::Sprite> &platforms)
      {
       sf::FloatRect b_guy = getGlobalBounds();
 
       speed_y += g*elapsed.asSeconds(); // acceleration for falling
 
-      if(b_guy.top+b_guy.height >= bound_bottom) // ground detection
+      bool top=0, left=0, bottom=0, right=0;
+      for(auto &platform : platforms)
+      {
+       if(Collision_T(platform) == 1){top = 1;}
+       if(Collision_L(platform) == 1){left = 1;}
+       if(Collision_B(platform) == 1){bottom = 1;}
+       if(Collision_R(platform) == 1){right = 1;}
+      }
+
+      if((b_guy.top+b_guy.height >= bound_bottom) || (top == 1)) // ground detection
        {
         on_ground = true;
        }
@@ -134,7 +196,7 @@ class AnimatedSprite : public sf::Sprite
         if(slf.asSeconds() >= 1/fps)
          {
           it++;
-          if(it==9){it=3;}
+          if(it>=9){it=3;}
           slf = slf-slf;
          }
         setTextureRect(frames[it]);
@@ -180,6 +242,11 @@ int main()
         std::cerr << "Could not load texture" << std::endl;
     }
 
+    sf::Texture tex_platforms;
+    if (!tex_platforms.loadFromFile("sprites\\Map\\tileset.png")) {
+        std::cerr << "Could not load texture" << std::endl;
+    }
+
     AnimatedSprite hero(10, "sprites\\Character\\character.png");
     hero.setTexture(tex);
 
@@ -194,6 +261,20 @@ int main()
     hero.add_animation_frame(sf::IntRect(300, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(350, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(400, 0, 50, 37)); // hero running frame 1
+    hero.setPosition(375, 500);
+
+    std::vector<sf::Sprite> platforms;
+
+    sf::Sprite platform1;
+    sf::Sprite box1;
+    platform1.setTexture(tex_platforms);
+    box1.setTexture(tex_platforms);
+    platform1.setScale(1, 1);
+    platform1.setTextureRect(sf::IntRect(25, 24, 120, 76));
+    box1.setTextureRect(sf::IntRect(150, 0, 60, 40));
+    platform1.setPosition(400, 500);
+    box1.setPosition(435, 510);
+    platforms.emplace_back(box1);
 
     while (window.isOpen())
      {
@@ -210,9 +291,11 @@ int main()
        }
 
       window.clear(sf::Color::Black);
-      window.draw(hero);
+      window.draw(box1);
+      window.draw(platform1);
 
-      hero.animation(elapsed);
+      window.draw(hero);
+      hero.animation(elapsed, platforms);
 
       window.display();
      }
