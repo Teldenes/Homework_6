@@ -21,19 +21,60 @@ class AnimatedSprite : public sf::Sprite
       frames.emplace_back(frame);
      }
 
+    void setBounds(int left, int right, int top, int bottom)
+     {
+      bound_top = top;
+      bound_bottom = bottom;
+      bound_right = right;
+      bound_left = left;
+     }
+
     void animation(sf::Time &elapsed)
      {
-      slf += elapsed;
-      if(slf.asSeconds() >= 1/fps)
-       {
-        it++;
-        if(it==6){it=0;}
-        slf = slf-slf;
-       }
-      setTextureRect(frames[it]);
+      sf::FloatRect b_guy = getGlobalBounds();
 
       speed_y += g*elapsed.asSeconds(); // acceleration
+
+      if(b_guy.top+b_guy.height >= bound_bottom)
+       {
+        on_ground = true;
+       }
+      else
+       {
+        on_ground = false;
+       }
+
+      if(on_ground == true)// some very poor collision, scrap later
+       {
+        speed_y = 0;
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+         {
+          speed_y = -jump_strength;
+         }
+       }
+
+      if(speed_y > 0)
+       {
+        setTextureRect(frames[4]);
+       }
+      else if(speed_y < 0)
+       {
+        setTextureRect(frames[3]);
+       }
+      else
+       {
+        slf += elapsed;
+        if(slf.asSeconds() >= 1/fps)
+         {
+          it++;
+          if(it==6){it=0;}
+          slf = slf-slf;
+         }
+        setTextureRect(frames[it]);
+       }
+
       std::cout << speed_y << std::endl;
+
 
 
       move(0, speed_y*elapsed.asSeconds()); // falling
@@ -44,13 +85,16 @@ class AnimatedSprite : public sf::Sprite
 
   private:
     float fps;
-    int it=0;
+    int it=0, bound_top, bound_bottom, bound_right, bound_left;
     sf::Time slf; // since last frame
     std::string path;
     std::vector<sf::Rect<int>> frames;
-    float g = 200; //px/s
+    float g = 1000; //px/s
+    int jump_strength = 450;
+    float acc_x;
     int speed_x = 0;
     float speed_y = 0;
+    bool on_ground=0;
  };
 
 int main()
@@ -68,6 +112,7 @@ int main()
     AnimatedSprite hero(10, "sprites\\Character\\character.png");
     hero.setTexture(tex);
 
+    hero.setBounds(0, window.getSize().x, 0, window.getSize().y);
 
     //hero.add_animation_frame(sf::IntRect(0, 0, 50, 37)); // hero standing frame 1
     //hero.add_animation_frame(sf::IntRect(50, 0, 50, 37)); // hero standing frame 2
