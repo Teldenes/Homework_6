@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
@@ -29,19 +30,74 @@ class AnimatedSprite : public sf::Sprite
       bound_left = left;
      }
 
+
     void animation(sf::Time &elapsed)
      {
       sf::FloatRect b_guy = getGlobalBounds();
 
-      speed_y += g*elapsed.asSeconds(); // acceleration
+      speed_y += g*elapsed.asSeconds(); // acceleration for falling
 
-      if(b_guy.top+b_guy.height >= bound_bottom)
+      if(b_guy.top+b_guy.height >= bound_bottom) // ground detection
        {
         on_ground = true;
        }
       else
        {
         on_ground = false;
+       }
+
+      if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) // movement controls
+       {
+        //crickets
+       }
+      else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) //left
+       {
+        if(turn == 0)
+         {
+          setScale(-1,1);
+          turn = 1;
+          move(50,0);
+         }
+
+        acc_x=-run_acceleration;
+        if(on_ground==true){acc_x *= 3;}
+       }
+      else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) //right
+       {
+        if(turn == 1)
+         {
+          setScale(1,1);
+          turn = 0;
+          move(-50,0);
+         }
+        acc_x=run_acceleration;
+        if(on_ground==true){acc_x *= 3;}
+       }
+      else
+       {
+        acc_x =0;
+
+       }
+
+      if(fabs(speed_x) < speed_cap) // acceleration running
+      {
+       speed_x += acc_x*elapsed.asSeconds();
+      }
+
+      if(fabs(speed_x) > 25)
+       {
+        if(speed_x > 0)
+         {
+          speed_x += -drag_x*speed_x*(on_ground+1)*elapsed.asSeconds();
+         }
+        if(speed_x < 0)
+         {
+          speed_x += -drag_x*speed_x*(on_ground+1)*elapsed.asSeconds();
+         }
+       }
+      else if(acc_x == 0)
+       {
+        speed_x =0;
        }
 
       if(on_ground == true)// some very poor collision, scrap later
@@ -53,46 +109,61 @@ class AnimatedSprite : public sf::Sprite
          }
        }
 
-      if(speed_y > 0)
+      if(speed_y > 0) // jumping animation
        {
         setTextureRect(frames[4]);
        }
-      else if(speed_y < 0)
+      else if(speed_y < 0) // fallling animation
        {
         setTextureRect(frames[3]);
        }
-      else
+      else if(fabs(speed_x) < 5)
+       {
+        slf += elapsed;
+        if(slf.asSeconds() >= 2/fps)
+         {
+          it++;
+          if(it>=3){it=0;}
+          slf = slf-slf;
+         }
+        setTextureRect(frames[it]);
+       }
+      else  // running animation
        {
         slf += elapsed;
         if(slf.asSeconds() >= 1/fps)
          {
           it++;
-          if(it==6){it=0;}
+          if(it==9){it=3;}
           slf = slf-slf;
          }
         setTextureRect(frames[it]);
        }
 
-      std::cout << speed_y << std::endl;
+      std::cout << it << std::endl;
 
 
 
       move(0, speed_y*elapsed.asSeconds()); // falling
+      move(speed_x*elapsed.asSeconds(), 0); // movement <- ->
      }
 
 
 
 
   private:
+    bool turn = 0; // o for left, 1 for right
     float fps;
     int it=0, bound_top, bound_bottom, bound_right, bound_left;
     sf::Time slf; // since last frame
     std::string path;
     std::vector<sf::Rect<int>> frames;
     float g = 1000; //px/s
-    int jump_strength = 450;
-    float acc_x;
-    int speed_x = 0;
+    int jump_strength = 500;
+    int run_acceleration = 400;
+    int speed_cap = 500;
+    float acc_x=0, drag_x=1.4;
+    float speed_x = 0;
     float speed_y = 0;
     bool on_ground=0;
  };
@@ -114,9 +185,9 @@ int main()
 
     hero.setBounds(0, window.getSize().x, 0, window.getSize().y);
 
-    //hero.add_animation_frame(sf::IntRect(0, 0, 50, 37)); // hero standing frame 1
-    //hero.add_animation_frame(sf::IntRect(50, 0, 50, 37)); // hero standing frame 2
-    //hero.add_animation_frame(sf::IntRect(100, 0, 50, 37)); // hero standing frame 3
+    hero.add_animation_frame(sf::IntRect(0, 0, 50, 37)); // hero standing frame 1
+    hero.add_animation_frame(sf::IntRect(50, 0, 50, 37)); // hero standing frame 2
+    hero.add_animation_frame(sf::IntRect(100, 0, 50, 37)); // hero standing frame 3
     hero.add_animation_frame(sf::IntRect(150, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(200, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(250, 0, 50, 37)); // hero running frame 1
