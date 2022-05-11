@@ -162,10 +162,12 @@ class AnimatedSprite : public sf::Sprite
         speed_x =0;
        }
 
+      if(right == 1 || left == 1){speed_x = 0;}
+
       if(on_ground == true)// some very poor collision, scrap later
        {
         speed_y = 0;
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || toggle == 0)
          {
           speed_y = -jump_strength;
          }
@@ -202,19 +204,26 @@ class AnimatedSprite : public sf::Sprite
         setTextureRect(frames[it]);
        }
 
-      std::cout << it << std::endl;
+//      std::cout << "Top: " << top << " Bottom: " << bottom << " Left: " << left << " Right: " << right << std::endl;
 
 
+      if(bottom == 1 && speed_y < 0){speed_y = 0;}
+      if(right == 1 || left == 1){speed_x = 0;}
 
       move(0, speed_y*elapsed.asSeconds()); // falling
       move(speed_x*elapsed.asSeconds(), 0); // movement <- ->
      }
 
-
-
+    void toggle_jump()
+     {
+      if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+       {
+        toggle = 1;
+       }
+     }
 
   private:
-    bool turn = 0; // o for left, 1 for right
+    bool turn = 0, toggle = 0; // o for left, 1 for right
     float fps;
     int it=0, bound_top, bound_bottom, bound_right, bound_left;
     sf::Time slf; // since last frame
@@ -230,8 +239,21 @@ class AnimatedSprite : public sf::Sprite
     bool on_ground=0;
  };
 
+void plant_platform(sf::Sprite &plt, sf::Texture &tex, sf::Sprite &box, std::vector<sf::Sprite> &platforms, int x, int y)
+ {
+  plt.setTexture(tex);
+  box.setTexture(tex);
+  plt.setTextureRect(sf::IntRect(25, 24, 120, 76));
+  box.setTextureRect(sf::IntRect(150, 0, 60, 40));
+  plt.setPosition(x, y);
+  box.setPosition(x+35, y+10);
+  platforms.emplace_back(box);
+ };
+
 int main()
 {
+
+    std::cout << "||| To toggle jump mode press 'Space' |||" << std::endl;
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "My window");
     sf::Clock clock;
@@ -261,25 +283,40 @@ int main()
     hero.add_animation_frame(sf::IntRect(300, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(350, 0, 50, 37)); // hero running frame 1
     hero.add_animation_frame(sf::IntRect(400, 0, 50, 37)); // hero running frame 1
-    hero.setPosition(375, 500);
+    hero.setPosition(575, 500);
 
     std::vector<sf::Sprite> platforms;
 
     sf::Sprite platform1;
     sf::Sprite box1;
-    platform1.setTexture(tex_platforms);
-    box1.setTexture(tex_platforms);
-    platform1.setScale(1, 1);
-    platform1.setTextureRect(sf::IntRect(25, 24, 120, 76));
-    box1.setTextureRect(sf::IntRect(150, 0, 60, 40));
-    platform1.setPosition(400, 500);
-    box1.setPosition(435, 510);
-    platforms.emplace_back(box1);
+    plant_platform(platform1, tex_platforms, box1, platforms, 350, 480);
+
+    sf::Sprite platform2;
+    sf::Sprite box2;
+    plant_platform(platform2, tex_platforms, box2, platforms, 200, 390);
+
+    sf::Sprite platform3;
+    sf::Sprite box3;
+    plant_platform(platform3, tex_platforms, box3, platforms, 110, 290);
+
+    sf::Sprite platform4;
+    sf::Sprite box4;
+    plant_platform(platform4, tex_platforms, box4, platforms, 320, 230);
+
+    sf::Sprite platform5;
+    sf::Sprite box5;
+    plant_platform(platform5, tex_platforms, box5, platforms, 520, 330);
+
+    sf::Sprite platform6;
+    sf::Sprite box6;
+    plant_platform(platform6, tex_platforms, box6, platforms, 570, 160);
+
 
     while (window.isOpen())
      {
       sf::Time elapsed = clock.restart();
 
+      hero.toggle_jump();
 
       sf::Event event;
       while (window.pollEvent(event))
@@ -291,8 +328,17 @@ int main()
        }
 
       window.clear(sf::Color::Black);
-      window.draw(box1);
+
+//      for (auto it : platforms)
+//       {
+//        window.draw(it);
+//       }
       window.draw(platform1);
+      window.draw(platform2);
+      window.draw(platform3);
+      window.draw(platform4);
+      window.draw(platform5);
+      window.draw(platform6);
 
       window.draw(hero);
       hero.animation(elapsed, platforms);
